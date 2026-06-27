@@ -1,0 +1,12 @@
+{
+    "name": "rent_model",
+    "metrics": {
+        "r2": 0.53,
+        "mae": 394.69,
+        "rmse": 517.87
+    },
+    "version": 1,
+    "registration_date": "2026-06-27T14:32:34.540133",
+    "model": "rent_model_model_v1.joblib",
+    "features": "rent_model_features_v1.joblib"
+}
