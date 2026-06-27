@@ -133,22 +133,25 @@ def save_data(data_path, df):
 def preprocess(df):
     """
     Preprocess rental dataset.
-        - Convert rent_approval_date to datetime
-        - Extract year/month features
-        - Handle categorical encoding
+        - If rent_approval_date exists, convert to datetime and extract year/month
+        - Otherwise, expect year/month already provided
+        - Normalize text fields
     """
-    # Convert rent_approval_date to datetime
-    df['rent_approval_date'] = pd.to_datetime(df['rent_approval_date'], format='%Y-%m')
+    if 'rent_approval_date' in df.columns:
+        df['rent_approval_date'] = pd.to_datetime(df['rent_approval_date'], format='%Y-%m')
+        df['year'] = df['rent_approval_date'].dt.year
+        df['month'] = df['rent_approval_date'].dt.month
 
-    # Extract year and month
-    df['year'] = df['rent_approval_date'].dt.year
-    df['month'] = df['rent_approval_date'].dt.month
-
-    # Example: normalize text fields
-    df['town'] = df['town'].str.upper().str.strip()
-    df['flat_type'] = df['flat_type'].str.upper().str.strip()
+    # Normalize text fields if present
+    if 'town' in df.columns:
+        df['town'] = df['town'].str.upper().str.strip()
+    if 'flat_type' in df.columns:
+        df['flat_type'] = df['flat_type'].str.upper().str.strip()
+    if 'street_name' in df.columns:
+        df['street_name'] = df['street_name'].str.upper().str.strip()
 
     return df
+
 
 def run(data_path):
     """
