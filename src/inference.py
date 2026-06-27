@@ -33,7 +33,7 @@ from src.data_processor import preprocess   # your HDB-specific preprocessing
 from src.model_registry import retrieve
 from src.config import appconfig
 
-def get_prediction(**kwargs):
+def get_rent_prediction(**kwargs):
     """
     Get rent prediction for given flat details.
         Parameters:

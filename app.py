@@ -57,7 +57,7 @@
 
 
 import streamlit as st
-from src.inference import get_prediction
+from src.inference import get_rent_prediction
 
 # Initialise session state variable
 if 'input_features' not in st.session_state:
