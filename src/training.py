@@ -1,5 +1,5 @@
 """
-This module automates model training.
+This module automates model training for HDB rent prediction (regression).
 """
 
 import argparse
@@ -7,9 +7,10 @@ import logging
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 
 from src import data_processor
 from src import model_registry
@@ -20,56 +21,54 @@ logging.basicConfig(level=logging.INFO)
 
 features = appconfig['Model']['features'].split(',')
 categorical_features = appconfig['Model']['categorical_features'].split(',')
-numerical_features = appconfig['Model']['numerical_features'].split(',')
 label = appconfig['Model']['label']
-fdr_max = float(appconfig['Evaluation']['fdr'])
-recall_min = float(appconfig['Evaluation']['recall'])
 
 def run(data_path):
-    """
-    Main script to perform model training.
-        Parameters:
-            data_path (str): Directory containing the training dataset in csv
-        Returns:
-            None: No returns required
-    """
     logging.info('Process Data...')
     df = data_processor.run(data_path)
-    
-    numerical_transformer = MinMaxScaler()
+
+    # Preprocessor: one-hot encode categorical features, pass through others
     categorical_transformer = OneHotEncoder(handle_unknown="ignore")
     preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", numerical_transformer, numerical_features),
-            ("cat", categorical_transformer, categorical_features),
-        ]
+        transformers=[("cat", categorical_transformer, categorical_features)],
+        remainder='passthrough'
     )
-    
+
     # Train-Test Split
     logging.info('Start Train-Test Split...')
-    X_train, X_test, y_train, y_test = train_test_split(df[features], \
-                                                        df[label], \
-                                                        test_size=appconfig.getfloat('Model','test_size'), \
-                                                        random_state=0)
-    
-    # Train Classifier
+    X_train, X_test, y_train, y_test = train_test_split(
+        df[features],
+        df[label],
+        test_size=appconfig.getfloat('Model','test_size'),
+        random_state=0
+    )
+
+    # Choose regression model
     logging.info('Start Training...')
-    random_forest = RandomForestClassifier(n_estimators=appconfig.getint('Hyperparameters','rf_n_estimators'),
-                                           max_depth=appconfig.getint('Hyperparameters','rf_max_depth'), 
-                                           class_weight = appconfig.get('Hyperparameters','rf_class_weight'),
-                                           n_jobs=appconfig.getint('Hyperparameters','rf_n_jobs'))
-    
-    clf = Pipeline(steps=[("preprocessor", preprocessor),\
-                          ("binary_classifier", random_forest)
-                         ])
-    clf.fit(X_train, y_train)
-    
-    # Evaluate and Deploy
-    if evaluation.run(y_test, clf.predict(X_test)):
+    # Option 1: Linear Regression
+    model = LinearRegression()
+
+    # Option 2: Random Forest Regressor (uncomment if preferred)
+    # model = RandomForestRegressor(
+    #     n_estimators=appconfig.getint('Hyperparameters','rf_n_estimators'),
+    #     max_depth=appconfig.getint('Hyperparameters','rf_max_depth'),
+    #     random_state=0,
+    #     n_jobs=appconfig.getint('Hyperparameters','rf_n_jobs')
+    # )
+
+    regr = Pipeline(steps=[("preprocessor", preprocessor),
+                           ("regression", model)])
+    regr.fit(X_train, y_train)
+
+    # Evaluate and Persist
+    if evaluation.run(y_test, regr.predict(X_test)):
         logging.info('Persisting model...')
-        mdl_meta = { 'name': appconfig['Model']['name'], 'metrics': evaluation.get_eval_metrics(y_test, clf.predict(X_test)) }
-        model_registry.register(clf, features, mdl_meta)
-    
+        mdl_meta = {
+            'name': appconfig['Model']['name'],
+            'metrics': evaluation.get_eval_metrics(y_test, regr.predict(X_test))
+        }
+        model_registry.register(regr, features, mdl_meta)
+
     logging.info('Training completed.')
     return None
 
