@@ -1,7 +1,7 @@
 # hdb_app.py
 import streamlit as st
 import pandas as pd
-from src.inference import get_rent_prediction
+from src.inference import get_prediction
 
 # Set page config
 apptitle = 'HDB Rent Prediction'
@@ -33,5 +33,5 @@ if st.button("Predict Rent"):
         "street_name": street_name,
         "flat_type": flat_type
     }
-    prediction = get_rent_prediction(**input_data)
+    prediction = get_prediction(**input_data)
     st.success(f"Predicted Monthly Rent: ${prediction:.2f}")
