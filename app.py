@@ -99,7 +99,7 @@ def app_body():
     st.markdown(title, unsafe_allow_html=True)
     default_msg = '**Predicted Monthly Rent:** {}'
     if st.session_state['input_features']:
-        rent = get_rent_prediction(**st.session_state['input_features'])
+        rent = get_prediction(**st.session_state['input_features'])
         st.success(default_msg.format(f"${rent:.2f}"))
     return None
 
